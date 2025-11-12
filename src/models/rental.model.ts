@@ -18,7 +18,7 @@ export interface IRental extends Document {
 const RentalSchema = new Schema<IRental>(
   {
     clientName:   { type: String, required: true },
-    clientId:     { type: String, required: true }, // Nuevo campo
+    clientId:     { type: String, required: true },
     clientEmail:  { type: String, required: true },
     clientPhone:  { type: String, required: true },
     dress:        { type: Schema.Types.ObjectId, ref: 'Dress', required: true },
