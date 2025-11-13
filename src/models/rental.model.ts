@@ -3,7 +3,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IRental extends Document {
   clientName: string;
-  clientId: string; // 🆔 Identificación oficial
+  clientId: string; // Identificación oficial
   clientEmail: string;
   clientPhone: string;
   dress: mongoose.Types.ObjectId;

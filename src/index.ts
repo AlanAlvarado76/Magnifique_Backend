@@ -5,6 +5,7 @@ import userRoutes from './routes/user.routes'
 import dressRoutes from './routes/dress.routes'
 import rentalRoutes from './routes/rental.routes'
 import authRoutes from './routes/auth.routes'
+import clientRoutes from './routes/client.routes'
 
 dotenv.config();
 
@@ -17,6 +18,7 @@ app.use('/api/user', userRoutes);
 app.use('/api/dress', dressRoutes);
 app.use('/api/rental', rentalRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/client', clientRoutes);
 
 
 // Iniciar servidor
