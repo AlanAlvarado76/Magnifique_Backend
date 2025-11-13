@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'secreto123';
+const JWT_SECRET = process.env.JWT_SECRET || '@AAMA050301HDGLRLA8';
 
 interface DecodedUser {
   id: string;
