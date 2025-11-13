@@ -1,12 +1,11 @@
-// src/models/rental.model.ts
-import mongoose, { Schema, Document } from 'mongoose';
+import mongoose, { Document, Schema } from 'mongoose';
 
 export interface IRental extends Document {
-  clientName: string;
-  clientId: string; // Identificación oficial
-  clientEmail: string;
-  clientPhone: string;
-  dress: mongoose.Types.ObjectId;
+  clientId: mongoose.Types.ObjectId;   // ID del cliente
+  clientName: string;                  // Nombre del cliente (snapshot)
+  clientEmail: string;                 // Email del cliente (snapshot)
+  clientPhone: string;                 // Teléfono del cliente (snapshot)
+  dress: mongoose.Types.ObjectId;      // Vestido rentado
   startDate: Date;
   endDate: Date;
   status: 'active' | 'completed' | 'cancelled';
@@ -17,17 +16,53 @@ export interface IRental extends Document {
 
 const RentalSchema = new Schema<IRental>(
   {
-    clientName:   { type: String, required: true },
-    clientId:     { type: String, required: true },
-    clientEmail:  { type: String, required: true },
-    clientPhone:  { type: String, required: true },
-    dress:        { type: Schema.Types.ObjectId, ref: 'Dress', required: true },
-    startDate:    { type: Date, required: true },
-    endDate:      { type: Date, required: true },
-    status:       { type: String, enum: ['active', 'completed', 'cancelled'], default: 'active' },
-    totalPrice:   { type: Number, required: true }
+    clientId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Client',
+      required: true
+    },
+    clientName: {
+      type: String,
+      required: true,
+      minlength: 3
+    },
+    clientEmail: {
+      type: String,
+      required: true,
+      match: [/\S+@\S+\.\S+/, 'Correo electrónico no válido']
+    },
+    clientPhone: {
+      type: String,
+      required: true,
+      match: [/^\d{10}$/, 'El número de teléfono debe tener 10 dígitos']
+    },
+    dress: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Dress',
+      required: true
+    },
+    startDate: {
+      type: Date,
+      required: true
+    },
+    endDate: {
+      type: Date,
+      required: true
+    },
+    status: {
+      type: String,
+      enum: ['active', 'completed', 'cancelled'],
+      default: 'active'
+    },
+    totalPrice: {
+      type: Number,
+      required: true,
+      min: 0
+    }
   },
-  { timestamps: true }
+  {
+    timestamps: true // crea createdAt y updatedAt automáticamente
+  }
 );
 
 export const Rental = mongoose.model<IRental>('Rental', RentalSchema);
