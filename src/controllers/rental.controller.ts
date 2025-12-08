@@ -59,12 +59,9 @@ export const createRental = async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'La fecha de inicio no puede ser posterior a la de término.' });
     }
 
-    // Calcular días de renta y precio total
-    const msPerDay = 1000 * 60 * 60 * 24;
-    const days = Math.ceil((end.getTime() - start.getTime()) / msPerDay);
-    const totalPrice = days * selectedDress.rentalPrice;
+    // Precio fijo del vestido
+    const totalPrice = selectedDress.rentalPrice;
 
-    // Crear la renta
     const newRental = new Rental({
       clientId: client._id,
       clientName: client.fullName,
@@ -93,6 +90,7 @@ export const createRental = async (req: Request, res: Response) => {
 
 
 
+
 // Actualizar renta
 export const updateRental = async (req: Request, res: Response) => {
   try {
@@ -104,7 +102,7 @@ export const updateRental = async (req: Request, res: Response) => {
       return res.status(404).json({ message: 'Renta no encontrada.' });
     }
 
-    // Validación y asignación de fechas
+    // Validación de fechas si se proporcionan
     let start = rental.startDate;
     let end = rental.endDate;
 
@@ -115,36 +113,39 @@ export const updateRental = async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'La fecha de inicio no puede ser posterior a la de término.' });
     }
 
-    // Cambiar vestido si es diferente
+    let currentDress = await Dress.findById(rental.dress);
+
+    // Si cambia el vestido
     if (dress && dress !== rental.dress.toString()) {
       const newDress = await Dress.findById(dress);
       if (!newDress || !newDress.available) {
         return res.status(400).json({ message: 'El nuevo vestido no está disponible o no existe.' });
       }
 
-      const oldDress = await Dress.findById(rental.dress);
-      if (oldDress) {
-        oldDress.available = true;
-        await oldDress.save();
+      // Liberar el vestido anterior
+      if (currentDress) {
+        currentDress.available = true;
+        await currentDress.save();
       }
 
+      // Asignar el nuevo vestido
       rental.dress = newDress._id as mongoose.Types.ObjectId;
+      currentDress = newDress;
+
+
       newDress.available = false;
       await newDress.save();
     }
 
-    // Recalcular precio
-    const msPerDay = 1000 * 60 * 60 * 24;
-    const days = Math.ceil((end.getTime() - start.getTime()) / msPerDay);
-    const dressDoc = await Dress.findById(rental.dress);
-    const price = dressDoc ? dressDoc.rentalPrice * days : rental.totalPrice;
+    // Precio fijo del vestido
+    const totalPrice = currentDress?.rentalPrice ?? rental.totalPrice;
 
     rental.startDate = start;
     rental.endDate = end;
     rental.status = status || rental.status;
-    rental.totalPrice = price;
+    rental.totalPrice = totalPrice;
 
-    //  Liberar vestido si la renta fue cancelada o completada
+    // Si se completa o cancela la renta → liberar el vestido
     if (status === 'completed' || status === 'cancelled') {
       const rentedDress = await Dress.findById(rental.dress);
       if (rentedDress && !rentedDress.available) {

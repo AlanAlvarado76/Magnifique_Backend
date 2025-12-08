@@ -8,6 +8,7 @@ export interface IClient extends Document {
   city: string;
   state: string;
   postalCode: string;
+  birthDate: Date; 
   createdAt: Date;
   updatedAt: Date;
 }
@@ -46,6 +47,10 @@ const ClientSchema = new Schema<IClient>(
       type: String,
       required: true,
       match: [/^\d{5}$/, 'El código postal debe tener 5 dígitos']
+    },
+    birthDate: {
+      type: Date,
+      required: true
     }
   },
   {

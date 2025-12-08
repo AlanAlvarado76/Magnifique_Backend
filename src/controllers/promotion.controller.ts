@@ -61,7 +61,6 @@ export const createPromotion = async (req: Request, res: Response) => {
 
 
 //  Actualizar promoción
-
 export const updatePromotion = async (req: Request, res: Response) => {
   try {
     const { startDate, endDate } = req.body;

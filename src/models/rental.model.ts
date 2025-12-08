@@ -2,9 +2,9 @@ import mongoose, { Document, Schema } from 'mongoose';
 
 export interface IRental extends Document {
   clientId: mongoose.Types.ObjectId;   // ID del cliente
-  clientName: string;                  // Nombre del cliente (snapshot)
-  clientEmail: string;                 // Email del cliente (snapshot)
-  clientPhone: string;                 // Teléfono del cliente (snapshot)
+  clientName: string;                  // Nombre del cliente
+  clientEmail: string;                 // Email del cliente 
+  clientPhone: string;                 // Teléfono del cliente
   dress: mongoose.Types.ObjectId;      // Vestido rentado
   startDate: Date;
   endDate: Date;
