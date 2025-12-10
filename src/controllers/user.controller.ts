@@ -30,20 +30,35 @@ export const createUser = async (req: Request, res: Response) => {
   try {
     const { username, email, password, role } = req.body;
 
-    // Validaciones mínimas
+    // Validación del username
     if (!username || username.length < 3) {
-      return res.status(400).json({ message: 'El nombre de usuario es obligatorio y debe tener al menos 3 caracteres.' });
+      return res.status(400).json({
+        message: 'El nombre de usuario es obligatorio y debe tener al menos 3 caracteres.'
+      });
     }
 
-    if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
+    // Validación del correo
+    const emailRegex = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/;
+    if (!email || !emailRegex.test(email)) {
       return res.status(400).json({ message: 'El correo electrónico no es válido.' });
     }
 
+    // Validación de contraseña
     if (!password || password.length < 6) {
-      return res.status(400).json({ message: 'La contraseña debe tener al menos 6 caracteres.' });
+      return res.status(400).json({
+        message: 'La contraseña debe tener al menos 6 caracteres.'
+      });
     }
 
-    // Verificar si ya existe el usuario
+    // Validación del rol según el modelo
+    const allowedRoles = ['Admin', 'User', 'Client'];
+    if (role && !allowedRoles.includes(role)) {
+      return res.status(400).json({
+        message: 'El rol proporcionado no es válido.'
+      });
+    }
+
+    // Verificar duplicados
     const existing = await User.findOne({
       $or: [{ username }, { email }]
     });
@@ -52,9 +67,10 @@ export const createUser = async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'El nombre de usuario o correo ya están registrados.' });
     }
 
-    // Encriptar la contraseña
+    // Hash de contraseña
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Crear usuario
     const newUser = new User({
       username,
       email,
@@ -64,15 +80,17 @@ export const createUser = async (req: Request, res: Response) => {
 
     const savedUser = await newUser.save();
 
-    // No enviamos la contraseña en la respuesta
+    // Limpiar contraseña en respuesta
     const { password: _, ...userWithoutPassword } = savedUser.toObject();
 
-    res.status(201).json(userWithoutPassword);
-  } catch (error: any) {
+    return res.status(201).json(userWithoutPassword);
+
+  } catch (error) {
     console.error('Error al crear usuario:', error);
-    res.status(500).json({ message: 'Error al crear usuario', error });
+    return res.status(500).json({ message: 'Error al crear usuario', error });
   }
 };
+
 
 //Actualizar Usuario
 export const updateUser = async (req: Request, res: Response) => {

@@ -1,9 +1,11 @@
 // src/controllers/rental.controller.ts
 import mongoose from 'mongoose';
+import path from "path";
 import { Request, Response } from 'express';
 import { Rental } from '../models/rental.model';
 import { Client } from '../models/client.model';
 import { Dress } from '../models/dress.model';
+
 
 // Obtener todas las rentas
 export const getAllRentals = async (_req: Request, res: Response) => {
@@ -187,8 +189,6 @@ export const updateRental = async (req: Request, res: Response) => {
   }
 };
 
-
-
 // Eliminar renta
 export const deleteRental = async (req: Request, res: Response) => {
   try {
@@ -265,4 +265,5 @@ export const reportDamage = async (req: Request, res: Response) => {
     res.status(500).json({ message: "Error al reportar daño", error });
   }
 };
+
 

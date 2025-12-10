@@ -1,27 +1,65 @@
-import { Router } from 'express';
+import { Router, Request, Response } from "express";
 import {
-  getAllClients,
-  getClientById,
   createClient,
   updateClient,
-  deleteClient
-} from '../controllers/client.controller';
+  deleteClient,
+  getAllClients,
+  getClientById,
+} from "../controllers/client.controller";
+
+import { authenticateToken } from "../middleware/authMiddleware";
+import { authorizeRoles } from "../middleware/authorizeRole";
 
 const router = Router();
 
+// Crear cliente
+router.post(
+  "/create",
+  authenticateToken,
+  authorizeRoles(["Admin", "User"]),
+  (req: Request, res: Response) => {
+    createClient(req, res);
+  }
+);
+
 // Obtener todos los clientes
-router.get('/', getAllClients);
+router.get(
+  "/",
+  authenticateToken,
+  authorizeRoles(["Admin", "User"]),
+  (req: Request, res: Response) => {
+    getAllClients(req, res);
+  }
+);
 
-// Obtener cliente por ID
-router.get('/client/:id', getClientById);
-
-// Crear nuevo cliente
-router.post('/create', createClient);
+// Obtener un cliente por ID
+router.get(
+  "/:clientId",
+  authenticateToken,
+  authorizeRoles(["Admin", "User"]),
+  (req: Request, res: Response) => {
+    getClientById(req, res);
+  }
+);
 
 // Actualizar cliente
-router.put('/update/:id', updateClient);
+router.put(
+  "/update/:clientId",
+  authenticateToken,
+  authorizeRoles(["Admin", "User"]),
+  (req: Request, res: Response) => {
+    updateClient(req, res);
+  }
+);
 
 // Eliminar cliente
-router.delete('/delete/:id', deleteClient);
+router.put(
+  "/delete/:clientId",
+  authenticateToken,
+  authorizeRoles(["Admin"]), // Solo Admin debería poder eliminar
+  (req: Request, res: Response) => {
+    deleteClient(req, res);
+  }
+);
 
 export default router;
