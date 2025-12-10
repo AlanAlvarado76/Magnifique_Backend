@@ -26,10 +26,11 @@ export const getRentalById = async (req: Request, res: Response) => {
   }
 };
 
+
 // Crear una nueva renta
 export const createRental = async (req: Request, res: Response) => {
   try {
-    const { clientId, dress, startDate, endDate } = req.body;
+    const { clientId, dress, startDate, endDate, totalPrice } = req.body;
 
     // Validación de campos requeridos
     if (!clientId || !dress || !startDate || !endDate) {
@@ -55,12 +56,25 @@ export const createRental = async (req: Request, res: Response) => {
     // Validar fechas
     const start = new Date(startDate);
     const end = new Date(endDate);
+
     if (start > end) {
       return res.status(400).json({ message: 'La fecha de inicio no puede ser posterior a la de término.' });
     }
 
-    // Precio fijo del vestido
-    const totalPrice = selectedDress.rentalPrice;
+    // --- VALIDACIÓN DE FECHAS EN EL PASADO ---
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (start < today) {
+      return res.status(400).json({ message: 'La fecha de inicio no puede estar en el pasado.' });
+    }
+
+    if (end < today) {
+      return res.status(400).json({ message: 'La fecha de término no puede estar en el pasado.' });
+    }
+
+    // Precio personalizado o el fijo del vestido
+    const finalPrice = totalPrice ?? selectedDress.rentalPrice;
 
     const newRental = new Rental({
       clientId: client._id,
@@ -70,7 +84,7 @@ export const createRental = async (req: Request, res: Response) => {
       dress: selectedDress._id,
       startDate: start,
       endDate: end,
-      totalPrice,
+      totalPrice: finalPrice,
       status: 'active'
     });
 
@@ -88,21 +102,18 @@ export const createRental = async (req: Request, res: Response) => {
 };
 
 
-
-
-
 // Actualizar renta
 export const updateRental = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { startDate, endDate, status, dress } = req.body;
+    const { startDate, endDate, status, dress, totalPrice } = req.body;
 
     const rental = await Rental.findById(id);
     if (!rental) {
       return res.status(404).json({ message: 'Renta no encontrada.' });
     }
 
-    // Validación de fechas si se proporcionan
+    // --- VALIDACIÓN Y ACTUALIZACIÓN DE FECHAS ---
     let start = rental.startDate;
     let end = rental.endDate;
 
@@ -113,39 +124,52 @@ export const updateRental = async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'La fecha de inicio no puede ser posterior a la de término.' });
     }
 
+    // --- VALIDACIÓN: NO PERMITIR FECHAS EN EL PASADO ---
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (start < today) {
+      return res.status(400).json({ message: 'La fecha de inicio no puede estar en el pasado.' });
+    }
+
+    if (end < today) {
+      return res.status(400).json({ message: 'La fecha de término no puede estar en el pasado.' });
+    }
+
     let currentDress = await Dress.findById(rental.dress);
 
-    // Si cambia el vestido
+    // --- SI CAMBIA EL VESTIDO ---
     if (dress && dress !== rental.dress.toString()) {
       const newDress = await Dress.findById(dress);
       if (!newDress || !newDress.available) {
         return res.status(400).json({ message: 'El nuevo vestido no está disponible o no existe.' });
       }
 
-      // Liberar el vestido anterior
+      // Liberar vestido anterior
       if (currentDress) {
         currentDress.available = true;
         await currentDress.save();
       }
 
-      // Asignar el nuevo vestido
+      // Asignar nuevo vestido
       rental.dress = newDress._id as mongoose.Types.ObjectId;
       currentDress = newDress;
-
 
       newDress.available = false;
       await newDress.save();
     }
 
-    // Precio fijo del vestido
-    const totalPrice = currentDress?.rentalPrice ?? rental.totalPrice;
+    // --- ACTUALIZAR PRECIO SOLO SI SE ENVÍA ---
+    if (totalPrice !== undefined) {
+      rental.totalPrice = totalPrice;
+    }
 
+    // --- ACTUALIZAR ESTADO Y FECHAS ---
     rental.startDate = start;
     rental.endDate = end;
     rental.status = status || rental.status;
-    rental.totalPrice = totalPrice;
 
-    // Si se completa o cancela la renta → liberar el vestido
+    // Si se completa o cancela la renta → liberar vestido
     if (status === 'completed' || status === 'cancelled') {
       const rentedDress = await Dress.findById(rental.dress);
       if (rentedDress && !rentedDress.available) {
@@ -156,11 +180,13 @@ export const updateRental = async (req: Request, res: Response) => {
 
     const updatedRental = await rental.save();
     res.status(200).json(updatedRental);
+
   } catch (error) {
     console.error('Error al actualizar renta:', error);
     res.status(500).json({ message: 'Error al actualizar renta', error });
   }
 };
+
 
 
 // Eliminar renta
