@@ -5,7 +5,8 @@ import {
   getRentalById,
   createRental,
   updateRental,
-  deleteRental
+  deleteRental,
+  reportDamage
 } from '../controllers/rental.controller';
 
 const router = Router();
@@ -14,6 +15,7 @@ router.get('/', getAllRentals);
 router.get('/:id', getRentalById);
 router.post('/create', createRental);
 router.put('/update/:id', updateRental);
+router.put('/damage/:id', reportDamage)
 router.delete('/delete/:id', deleteRental);
 
 export default router;

@@ -199,3 +199,70 @@ export const deleteRental = async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Error al eliminar renta', error });
   }
 };
+
+//Eliminar Daño
+export const reportDamage = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { repairCost, replacementCost, damageNotes, status } = req.body;
+
+    // Buscar renta
+    const rental = await Rental.findById(id);
+    if (!rental) {
+      return res.status(404).json({ message: 'Renta no encontrada.' });
+    }
+
+    // Buscar vestido
+    const dress = await Dress.findById(rental.dress);
+    if (!dress) {
+      return res.status(404).json({ message: 'Vestido no encontrado.' });
+    }
+
+    // Validar que la renta esté activa o completada
+    if (rental.status === "cancelled") {
+      return res.status(400).json({ message: "No se puede reportar daño en una renta cancelada." });
+    }
+
+    // Validar que no esté ya reportado como perdido
+    if (rental.status === "lost") {
+      return res.status(400).json({ message: "Este vestido ya fue reportado como perdido." });
+    }
+
+    // --- MARCAR DAÑO ---
+    rental.isDamaged = true;
+    rental.damageNotes = damageNotes ?? rental.damageNotes;
+
+    // --- DAÑO PARCIAL (Reparación) ---
+    if (repairCost && repairCost > 0) {
+      rental.repairCost = repairCost;
+      rental.totalPrice += repairCost; // sumar al total
+      rental.status = status ?? "damaged";
+
+      // Si se daña → vestido NO está disponible hasta que lo reparen
+      dress.available = false;
+      await dress.save();
+    }
+
+    // --- DAÑO TOTAL O PÉRDIDA (Reposición) ---
+    if (replacementCost && replacementCost > 0) {
+      rental.replacementCost = replacementCost;
+      rental.totalPrice += replacementCost; // sumar al total
+      rental.status = status ?? "lost";
+
+      // Vestido perdido → NO disponible permanentemente
+      dress.available = false;
+      await dress.save();
+    }
+
+    const updated = await rental.save();
+    return res.status(200).json({
+      message: "Daño reportado correctamente.",
+      rental: updated
+    });
+
+  } catch (error) {
+    console.error("Error al reportar daño:", error);
+    res.status(500).json({ message: "Error al reportar daño", error });
+  }
+};
+
